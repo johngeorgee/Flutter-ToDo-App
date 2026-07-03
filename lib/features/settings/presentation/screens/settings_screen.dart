@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/core/widgets/app_scaffold.dart';
+import 'package:todo_app/features/settings/presentation/providers/theme_provider.dart';
 
-class SettingsScreen extends StatefulWidget {
+class SettingsScreen extends ConsumerStatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  State<SettingsScreen> createState() => _SettingsScreenState();
+  ConsumerState<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   bool _notificationsEnabled = true;
-  bool _isDarkMode = false;
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+  final themeNotifier = ref.read(themeProvider.notifier);
+//  bool _isDarkMode = Theme.of(context).brightness == Brightness.dark;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return AppScaffold(
@@ -46,9 +49,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: 'Theme',
                   subtitle: isDark ? 'Dark mode' : 'Light mode',
                   trailing: Switch.adaptive(
-                    value: _isDarkMode,
+                    value: isDark,
                     onChanged: (value) {
-                      setState(() => _isDarkMode = value);
+                      themeNotifier.toggleTheme(value);
                     },
                   ),
                 ),

@@ -16,7 +16,7 @@ class TodoApp extends ConsumerWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
-      initialRoute: AppRoutes.home,
+      initialRoute: AppRoutes.main,
       onGenerateRoute: AppRouter.onGenerateRoute,
     );
   }

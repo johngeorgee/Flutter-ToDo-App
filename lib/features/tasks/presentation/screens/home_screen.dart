@@ -153,11 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
         _completedTasks.isNotEmpty;
 
     return AppSliverScaffold(
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.addTask),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('New Task'),
-      ),
+      
       slivers: [
         SliverAppBar(
           floating: true,
@@ -179,14 +175,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.settings_outlined),
-              onPressed: () =>
-                  Navigator.of(context).pushNamed(AppRoutes.settings),
-              tooltip: 'Settings',
-            ),
-          ],
+          
         ),
         SliverToBoxAdapter(
           child: Column(

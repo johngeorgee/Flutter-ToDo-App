@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:todo_app/config/routes/app_routes.dart';
+import 'package:todo_app/features/navigation/presentation/screens/main_screen.dart';
 import 'package:todo_app/features/settings/presentation/screens/settings_screen.dart';
 import 'package:todo_app/features/tasks/presentation/screens/add_edit_task_screen.dart';
 import 'package:todo_app/features/tasks/presentation/screens/home_screen.dart';
@@ -12,7 +13,7 @@ class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     switch (settings.name) {
       case AppRoutes.home:
-        return _fadeRoute(const HomeScreen(), settings);
+        return _fadeRoute(const MainScreen(), settings);
       case AppRoutes.addTask:
         return _slideUpRoute(
           const AddEditTaskScreen(isEditing: false),
@@ -51,7 +52,7 @@ class AppRouter {
       case AppRoutes.settings:
         return _slideRoute(const SettingsScreen(), settings);
       default:
-        return _fadeRoute(const HomeScreen(), settings);
+        return _fadeRoute(const MainScreen(), settings);
     }
   }
 

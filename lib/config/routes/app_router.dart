@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:todo_app/config/routes/app_routes.dart';
 import 'package:todo_app/features/navigation/presentation/screens/main_screen.dart';
 import 'package:todo_app/features/settings/presentation/screens/settings_screen.dart';
+import 'package:todo_app/features/tasks/domain/entities/task_entity.dart';
 import 'package:todo_app/features/tasks/presentation/screens/add_edit_task_screen.dart';
-import 'package:todo_app/features/tasks/presentation/screens/home_screen.dart';
+//import 'package:todo_app/features/tasks/presentation/screens/home_screen.dart';
 import 'package:todo_app/features/tasks/presentation/screens/search_screen.dart';
 import 'package:todo_app/features/tasks/presentation/screens/task_details_screen.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
+//mport 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
+//import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
+//import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
 
 class AppRouter {
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
@@ -16,34 +18,22 @@ class AppRouter {
         return _fadeRoute(const MainScreen(), settings);
       case AppRoutes.addTask:
         return _slideUpRoute(
-          const AddEditTaskScreen(isEditing: false),
+          const AddEditTaskScreen(),
           settings,
         );
       case AppRoutes.editTask:
-        final args = settings.arguments as Map<String, dynamic>?;
+        final task = settings.arguments as Task;
         return _slideUpRoute(
           AddEditTaskScreen(
-            isEditing: true,
-            initialTitle: args?['title'] as String? ?? '',
-            initialDescription: args?['description'] as String? ?? '',
-            initialCategory:
-                args?['category'] as TaskCategory? ?? TaskCategory.personal,
-            initialPriority:
-                args?['priority'] as TaskPriority? ?? TaskPriority.none,
-            initialDueDate: args?['dueDate'] as DateTime?,
+            task: task,
           ),
           settings,
         );
       case AppRoutes.taskDetails:
-        final args = settings.arguments as Map<String, dynamic>? ?? {};
+        final task = settings.arguments as Task;
         return _slideRoute(
           TaskDetailsScreen(
-            title: args['title'] as String? ?? 'Task',
-            description: args['description'] as String? ?? '',
-            category: args['category'] as TaskCategory? ?? TaskCategory.personal,
-            priority: args['priority'] as TaskPriority? ?? TaskPriority.none,
-            dueDate: args['dueDate'] as String?,
-            isCompleted: args['isCompleted'] as bool? ?? false,
+            task: task
           ),
           settings,
         );

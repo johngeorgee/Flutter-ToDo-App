@@ -1,7 +1,25 @@
 import 'package:hive/hive.dart';
 import 'package:todo_app/features/categories/domain/entities/category.dart';
-
+part 'category_model.g.dart';
+@HiveType(typeId: 0)
 class CategoryModel extends HiveObject {
+  @HiveField(0)
+  String id;
+
+  @HiveField(1)
+  String name;
+
+  @HiveField(2)
+  int colorValue;
+
+  @HiveField(3)
+  int? iconCodePoint;
+
+  @HiveField(4)
+  DateTime createdAt;
+
+  @HiveField(5)
+  DateTime updatedAt;
   CategoryModel({
     required this.id,
     required this.name,
@@ -10,13 +28,6 @@ class CategoryModel extends HiveObject {
     required this.createdAt,
     required this.updatedAt,
   });
-
-  String id;
-  String name;
-  int colorValue;
-  int? iconCodePoint;
-  DateTime createdAt;
-  DateTime updatedAt;
 
   Category toEntity() {
     return Category(
@@ -44,7 +55,7 @@ class CategoryModel extends HiveObject {
     String? id,
     String? name,
     int? colorValue,
-    int? Function()? iconCodePoint,
+    int? iconCodePoint,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -52,10 +63,11 @@ class CategoryModel extends HiveObject {
       id: id ?? this.id,
       name: name ?? this.name,
       colorValue: colorValue ?? this.colorValue,
-      iconCodePoint:
-          iconCodePoint != null ? iconCodePoint() : this.iconCodePoint,
+      iconCodePoint: iconCodePoint ?? this.iconCodePoint,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }
+
+ 

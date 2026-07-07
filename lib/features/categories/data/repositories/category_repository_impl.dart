@@ -70,7 +70,7 @@ class CategoryRepositoryImpl implements CategoryRepository {
     final updated = existing.copyWith(
       name: trimmedName,
       colorValue: colorValue,
-      iconCodePoint: () => iconCodePoint,
+      iconCodePoint:  iconCodePoint,
       updatedAt: DateTime.now(),
     );
 

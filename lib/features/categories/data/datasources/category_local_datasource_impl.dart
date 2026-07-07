@@ -28,11 +28,8 @@ class CategoryLocalDataSourceImpl implements CategoryLocalDataSource {
 
   @override
   Future<void> save(CategoryModel category) async {
-    try {
       await HiveService.categoriesBox.put(category.id, category);
-    } catch (_) {
-      throw const CacheFailure('Failed to save category');
-    }
+
   }
 
   @override

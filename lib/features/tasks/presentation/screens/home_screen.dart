@@ -1,7 +1,13 @@
+// ignore_for_file: unused_field, unused_element, unused_local_variable
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_app/config/routes/app_routes.dart';
 import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/core/widgets/app_scaffold.dart';
+import 'package:todo_app/features/categories/presentation/providers/category_providers.dart';
+///import 'package:todo_app/features/tasks/presentation/providers/task_form_provider.dart';
+import 'package:todo_app/features/tasks/presentation/providers/task_provider.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/empty_state.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
@@ -10,73 +16,24 @@ import 'package:todo_app/features/tasks/presentation/widgets/task_tile.dart';
 import 'package:todo_app/shared/widgets/app_search_bar.dart';
 import 'package:todo_app/shared/widgets/custom_bottom_sheet.dart';
 import 'package:todo_app/shared/widgets/section_header.dart';
-
-class HomeScreen extends StatefulWidget {
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
+//import 'package:todo_app/features/tasks/presentation/providers/task_list_provider.dart' hide tasksStreamProvider;
+import 'package:todo_app/features/tasks/domain/entities/task_entity.dart';
+//import 'package:todo_app/features/tasks/presentation/providers/task_notifier.dart';
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  bool _showCompleted = true;
 
-  // Mock preview data
-  static const _todayTasks = [
-    _MockTask(
-      title: 'Review project proposal',
-      description: 'Go through the Q3 roadmap document',
-      priority: TaskPriority.high,
-      category: TaskCategory.work,
-      dueDate: 'Today, 5:00 PM',
-    ),
-    _MockTask(
-      title: 'Morning workout',
-      description: '30 min cardio + stretching',
-      priority: TaskPriority.medium,
-      category: TaskCategory.health,
-      dueDate: 'Today, 7:00 AM',
-      isCompleted: true,
-    ),
-  ];
-
-  static const _upcomingTasks = [
-    _MockTask(
-      title: 'Buy groceries',
-      description: 'Milk, eggs, bread, vegetables',
-      priority: TaskPriority.low,
-      category: TaskCategory.shopping,
-      dueDate: 'Tomorrow',
-    ),
-    _MockTask(
-      title: 'Call dentist',
-      priority: TaskPriority.none,
-      category: TaskCategory.health,
-      dueDate: 'Jul 5',
-    ),
-    _MockTask(
-      title: 'Prepare presentation slides',
-      description: 'Team sync on Friday',
-      priority: TaskPriority.high,
-      category: TaskCategory.work,
-      dueDate: 'Jul 6',
-    ),
-  ];
-
-  static const _completedTasks = [
-    _MockTask(
-      title: 'Pay electricity bill',
-      category: TaskCategory.personal,
-      dueDate: 'Yesterday',
-      isCompleted: true,
-    ),
-    _MockTask(
-      title: 'Reply to client email',
-      category: TaskCategory.work,
-      dueDate: 'Jul 1',
-      isCompleted: true,
-    ),
-  ];
+class _HomeScreenState extends ConsumerState<HomeScreen> {
+  final bool _showCompleted = true;
+  Future<void> _toggleTask(Task task) async {
+  await ref.read(taskNotifierProvider.notifier).toggleCompleted(task);
+}
+  
 
   String _greeting() {
     final hour = DateTime.now().hour;
@@ -85,17 +42,10 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good evening';
   }
 
-  void _openTaskDetails(_MockTask task) {
+  void _openTaskDetails(Task task) {
     Navigator.of(context).pushNamed(
       AppRoutes.taskDetails,
-      arguments: {
-        'title': task.title,
-        'description': task.description ?? '',
-        'category': task.category,
-        'priority': task.priority,
-        'dueDate': task.dueDate,
-        'isCompleted': task.isCompleted,
-      },
+      arguments: task
     );
   }
 
@@ -148,183 +98,184 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final hasTasks = _todayTasks.isNotEmpty ||
-        _upcomingTasks.isNotEmpty ||
-        _completedTasks.isNotEmpty;
+    final categories = ref.watch(categoriesStreamProvider);
+    final taskAsync = ref.watch(tasksStreamProvider);
+    
+    return taskAsync.when(
+      loading: () => const Center(
+    child: CircularProgressIndicator(),
+  ),
 
-    return AppSliverScaffold(
-      
-      slivers: [
-        SliverAppBar(
-          floating: true,
-          snap: true,
-          elevation: 0,
-          backgroundColor: colorScheme.surface,
-          title: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                _greeting(),
-                style: textTheme.labelMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                'My Tasks',
-                style: textTheme.headlineSmall,
-              ),
-            ],
-          ),
-          
-        ),
-        SliverToBoxAdapter(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: AppSpacing.sm),
-              AppSearchBar(
-                readOnly: true,
-                showFilter: true,
-                onTap: () =>
-                    Navigator.of(context).pushNamed(AppRoutes.search),
-                onFilterTap: _showFilterSheet,
-              ),
-              const SizedBox(height: AppSpacing.lg),
-              if (!hasTasks)
-                const SizedBox(
-                  height: 400,
-                  child: EmptyState(
-                    title: 'No tasks yet',
-                    subtitle:
-                        'Tap the button below to create your first task and stay organized.',
-                    icon: Icons.checklist_rounded,
-                    actionLabel: 'Create Task',
-                  ),
-                )
-              else ...[
-                if (_todayTasks.isNotEmpty) ...[
-                  SectionHeader(
-                    title: 'Today',
-                    subtitle: '${_todayTasks.length} tasks',
-                    trailing: TextButton(
-                      onPressed: () {},
-                      child: const Text('See all'),
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    child: Card(
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < _todayTasks.length; i++)
-                            TaskTile(
-                              title: _todayTasks[i].title,
-                              subtitle: _todayTasks[i].description,
-                              isCompleted: _todayTasks[i].isCompleted,
-                              priority: _todayTasks[i].priority,
-                              category: _todayTasks[i].category,
-                              dueDate: _todayTasks[i].dueDate,
-                              showDivider: i < _todayTasks.length - 1,
-                              onTap: () => _openTaskDetails(_todayTasks[i]),
-                              onCheckboxChanged: (_) {},
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-                if (_upcomingTasks.isNotEmpty) ...[
-                  SectionHeader(
-                    title: 'Upcoming',
-                    subtitle: '${_upcomingTasks.length} tasks',
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    child: Column(
-                      children: _upcomingTasks
-                          .map(
-                            (task) => Padding(
-                              padding: const EdgeInsets.only(
-                                bottom: AppSpacing.sm,
-                              ),
-                              child: TaskCard(
-                                title: task.title,
-                                description: task.description,
-                                priority: task.priority,
-                                category: task.category,
-                                dueDate: task.dueDate,
-                                onTap: () => _openTaskDetails(task),
-                                onCheckboxChanged: (_) {},
-                              ),
-                            ),
-                          )
-                          .toList(),
-                    ),
-                  ),
-                ],
-                SectionHeader(
-                  title: 'Completed',
-                  subtitle: '${_completedTasks.length} tasks',
-                  trailing: IconButton(
-                    icon: Icon(
-                      _showCompleted
-                          ? Icons.expand_less_rounded
-                          : Icons.expand_more_rounded,
-                    ),
-                    onPressed: () =>
-                        setState(() => _showCompleted = !_showCompleted),
+  error: (error, stack) => Center(
+    child: Text(error.toString()),
+  ),
+      data: (tasks) { 
+        final hasTasks = tasks.isNotEmpty;
+        final todayTasks = tasks.where((task) {
+  if (task.isCompleted) return false;
+
+  if (task.dueDate == null) return false;
+
+  final now = DateTime.now();
+
+  return task.dueDate!.year == now.year &&
+      task.dueDate!.month == now.month &&
+      task.dueDate!.day == now.day;
+}).toList();
+
+final upcomingTasks = tasks.where((task) {
+  return !task.isCompleted &&
+      (task.dueDate == null ||
+          task.dueDate!.isAfter(DateTime.now()));
+}).toList();
+
+final completedTasks =
+    tasks.where((task) => task.isCompleted).toList();
+        return AppSliverScaffold(
+        
+        slivers: [
+          SliverAppBar(
+            floating: true,
+            snap: true,
+            elevation: 0,
+            backgroundColor: colorScheme.surface,
+            title: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _greeting(),
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
                   ),
                 ),
-                if (_showCompleted)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: AppSpacing.lg,
-                    ),
-                    child: Card(
-                      child: Column(
-                        children: [
-                          for (var i = 0; i < _completedTasks.length; i++)
-                            TaskTile(
-                              title: _completedTasks[i].title,
-                              isCompleted: true,
-                              category: _completedTasks[i].category,
-                              dueDate: _completedTasks[i].dueDate,
-                              showDivider: i < _completedTasks.length - 1,
-                              onTap: () =>
-                                  _openTaskDetails(_completedTasks[i]),
-                              onCheckboxChanged: (_) {},
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
+                Text(
+                  'My Tasks',
+                  style: textTheme.headlineSmall,
+                ),
               ],
-            ],
+            ),
+            
           ),
-        ),
-      ],
+          SliverToBoxAdapter(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: AppSpacing.sm),
+                AppSearchBar(
+                  readOnly: true,
+                  showFilter: true,
+                  onTap: () =>
+                      Navigator.of(context).pushNamed(AppRoutes.search),
+                  onFilterTap: _showFilterSheet,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                if(upcomingTasks.isEmpty && todayTasks.isEmpty && completedTasks.isNotEmpty)
+                    const SizedBox(
+                    height: 400,
+                    child: EmptyState(
+                      title: 'No upcoming tasks yet',
+                      subtitle:
+                          'You have completed all your tasks for now. Tap the button below to create a new task and stay productive.',
+                      icon: Icons.checklist_rounded,
+                      actionLabel: 'Create Task',
+                    ),
+                  ),
+                if (!hasTasks)
+                  const SizedBox(
+                    height: 400,
+                    child: EmptyState(
+                      title: 'No tasks yet',
+                      subtitle:
+                          'Tap the button below to create your first task and stay organized.',
+                      icon: Icons.checklist_rounded,
+                      actionLabel: 'Create Task',
+                    ),
+                  )
+                else ...[
+                  if (todayTasks.isNotEmpty) ...[
+                    SectionHeader(
+                      title: 'Today',
+                      subtitle: '${todayTasks.length} tasks',
+                      trailing: TextButton(
+                        onPressed: () {},
+                        child: const Text('See all'),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Card(
+                        child: Column(
+                          children: [
+                            for (var i = 0; i < todayTasks.length; i++)
+                              TaskTile(
+                                title: todayTasks[i].title,
+                                subtitle: todayTasks[i].description,
+                                isCompleted: todayTasks[i].isCompleted,
+                                priority: todayTasks[i].priority,
+                                category: null,
+                                dueDate: todayTasks[i].dueDate?.toString(),
+                                showDivider: i < todayTasks.length - 1,
+                                onTap: () => _openTaskDetails(todayTasks[i]),
+                                onCheckboxChanged: (_) {
+                                  ref.read(taskNotifierProvider.notifier)
+                                  .toggleCompleted(todayTasks[i]);
+                                },
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  if (upcomingTasks.isNotEmpty) ...[
+                    SectionHeader(
+                      title: 'Upcoming',
+                      subtitle: '${upcomingTasks.length} tasks',
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: AppSpacing.lg,
+                      ),
+                      child: Column(
+                        children: upcomingTasks
+                            .map(
+                              (task) => Padding(
+                                padding: const EdgeInsets.only(
+                                  bottom: AppSpacing.sm,
+                                ),
+                                child: TaskCard(
+                                  title: task.title,
+                                  description: task.description,
+                                  priority: task.priority,
+                                  category: null,
+                                  dueDate: task.dueDate?.toString(),
+                                  onTap: () => _openTaskDetails(task),
+                                  onCheckboxChanged: (_) {
+                                  ref.read(taskNotifierProvider.notifier)
+                                  .toggleCompleted(task);
+                                  },
+                                ),
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ),
+                  ],
+
+                  
+  
+                ],
+              ],
+            ),
+          ),
+        ],
+      );
+    
+    },
     );
   }
-}
 
-class _MockTask {
-  const _MockTask({
-    required this.title,
-    this.description,
-    this.priority = TaskPriority.none,
-    this.category = TaskCategory.personal,
-    this.dueDate,
-    this.isCompleted = false,
-  });
 
-  final String title;
-  final String? description;
-  final TaskPriority priority;
-  final TaskCategory category;
-  final String? dueDate;
-  final bool isCompleted;
+
 }

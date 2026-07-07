@@ -3,7 +3,7 @@ import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
 import 'package:todo_app/shared/widgets/animated_checkbox.dart';
-
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
 class TaskTile extends StatelessWidget {
   const TaskTile({
     super.key,
@@ -133,7 +133,7 @@ class TaskTile extends StatelessWidget {
           ),
         ),
         if (showDivider)
-          Divider(
+          const Divider(
             indent: AppSpacing.lg + 24 + AppSpacing.md,
             endIndent: AppSpacing.lg,
             height: 1,

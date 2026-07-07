@@ -6,10 +6,9 @@ class UndoDeleteSnackBar extends SnackBar {
     super.key,
     required String taskTitle,
     required VoidCallback onUndo,
-    Duration duration = const Duration(seconds: 4),
+    super.duration,
   }) : super(
           content: _UndoDeleteContent(taskTitle: taskTitle),
-          duration: duration,
           behavior: SnackBarBehavior.floating,
           margin: const EdgeInsets.all(AppSpacing.lg),
           action: SnackBarAction(

@@ -1,65 +1,55 @@
+// ignore_for_file: unused_element_parameter
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_app/config/routes/app_routes.dart';
 import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/core/widgets/app_scaffold.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/undo_delete_snackbar.dart';
+import 'package:todo_app/features/tasks/domain/entities/task_entity.dart';
+import 'package:todo_app/features/tasks/presentation/providers/task_provider.dart';
 import 'package:todo_app/shared/widgets/confirmation_dialog.dart';
 
-class TaskDetailsScreen extends StatelessWidget {
+class TaskDetailsScreen extends ConsumerWidget {
   const TaskDetailsScreen({
     super.key,
-    required this.title,
-    required this.description,
-    required this.category,
-    required this.priority,
-    this.dueDate,
-    this.isCompleted = false,
+    required this.task,
   });
 
-  final String title;
-  final String description;
-  final TaskCategory category;
-  final TaskPriority priority;
-  final String? dueDate;
-  final bool isCompleted;
+  final Task task;
 
-  Future<void> _confirmDelete(BuildContext context) async {
+  Future<void> _confirmDelete(
+    BuildContext context,
+    WidgetRef ref,
+  ) async {
     final confirmed = await ConfirmationDialog.show(
       context,
       title: 'Delete Task',
-      message: 'Are you sure you want to delete this task? This action cannot be undone.',
+      message:
+          'Are you sure you want to delete this task? This action cannot be undone.',
       confirmLabel: 'Delete',
       cancelLabel: 'Cancel',
       isDestructive: true,
       icon: Icons.delete_outline_rounded,
     );
 
-    if (confirmed == true && context.mounted) {
-      UndoDeleteSnackBar.show(
-        context,
-        taskTitle: title,
-        onUndo: () {},
-      );
-      Navigator.of(context).pop();
-    }
+    if (confirmed != true) return;
+
+    await ref.read(taskNotifierProvider.notifier).delete(task.id);
+
+    if (!context.mounted) return;
+
+    Navigator.pop(context);
   }
 
   void _navigateToEdit(BuildContext context) {
     Navigator.of(context).pushNamed(
       AppRoutes.editTask,
-      arguments: {
-        'title': title,
-        'description': description,
-        'category': category,
-        'priority': priority,
-      },
+      arguments: task,
     );
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -72,16 +62,16 @@ class TaskDetailsScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => _navigateToEdit(context),
             tooltip: 'Edit',
+            onPressed: () => _navigateToEdit(context),
           ),
           IconButton(
             icon: Icon(
               Icons.delete_outline_rounded,
               color: colorScheme.error,
             ),
-            onPressed: () => _confirmDelete(context),
             tooltip: 'Delete',
+            onPressed: () => _confirmDelete(context, ref),
           ),
         ],
       ),
@@ -95,22 +85,23 @@ class TaskDetailsScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    title,
+                    task.title,
                     style: textTheme.headlineMedium?.copyWith(
-                      decoration: isCompleted
+                      decoration: task.isCompleted
                           ? TextDecoration.lineThrough
                           : null,
-                      color: isCompleted
+                      color: task.isCompleted
                           ? colorScheme.onSurfaceVariant
                           : colorScheme.onSurface,
                     ),
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
-                _StatusChip(isCompleted: isCompleted),
+                _StatusChip(isCompleted: task.isCompleted),
               ],
             ),
-            if (description.isNotEmpty) ...[
+
+            if (task.description.isNotEmpty) ...[
               const SizedBox(height: AppSpacing.xl),
               Text(
                 'Description',
@@ -120,42 +111,31 @@ class TaskDetailsScreen extends StatelessWidget {
               ),
               const SizedBox(height: AppSpacing.sm),
               Text(
-                description,
+                task.description,
                 style: textTheme.bodyLarge?.copyWith(
                   color: colorScheme.onSurface,
                   height: 1.5,
                 ),
               ),
             ],
+
             const SizedBox(height: AppSpacing.xxl),
+
             _DetailTile(
-              icon: Icons.event_rounded,
-              label: 'Due Date',
-              value: dueDate ?? 'No due date',
-            ),
-            _DetailTile(
-              icon: CategoryChip.iconFor(category),
+              icon: Icons.folder_outlined,
               label: 'Category',
-              value: CategoryChip.labelFor(category),
-              valueColor: CategoryChip.colorFor(category),
+              value: task.categoryId ?? 'No Category',
             ),
-            _DetailTile(
-              icon: PriorityBadge.iconFor(priority),
-              label: 'Priority',
-              value: PriorityBadge.labelFor(priority),
-              valueColor: PriorityBadge.colorFor(priority),
-            ),
-            _DetailTile(
-              icon: isCompleted
-                  ? Icons.check_circle_rounded
-                  : Icons.radio_button_unchecked_rounded,
-              label: 'Status',
-              value: isCompleted ? 'Completed' : 'In Progress',
-              valueColor: isCompleted
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-            ),
+
+            if (task.dueDate != null)
+              _DetailTile(
+                icon: Icons.event,
+                label: 'Due Date',
+                value: task.dueDate.toString(),
+              ),
+
             const SizedBox(height: AppSpacing.xxxl),
+
             Row(
               children: [
                 Expanded(
@@ -168,7 +148,7 @@ class TaskDetailsScreen extends StatelessWidget {
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: FilledButton.icon(
-                    onPressed: () => _confirmDelete(context),
+                    onPressed: () => _confirmDelete(context, ref),
                     style: FilledButton.styleFrom(
                       backgroundColor: colorScheme.errorContainer,
                       foregroundColor: colorScheme.onErrorContainer,
@@ -187,7 +167,9 @@ class TaskDetailsScreen extends StatelessWidget {
 }
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.isCompleted});
+  const _StatusChip({
+    required this.isCompleted,
+  });
 
   final bool isCompleted;
 
@@ -209,11 +191,11 @@ class _StatusChip extends StatelessWidget {
       child: Text(
         isCompleted ? 'Done' : 'Active',
         style: Theme.of(context).textTheme.labelMedium?.copyWith(
-          color: isCompleted
-              ? colorScheme.onPrimaryContainer
-              : colorScheme.onSurfaceVariant,
-          fontWeight: FontWeight.w600,
-        ),
+              color: isCompleted
+                  ? colorScheme.onPrimaryContainer
+                  : colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }

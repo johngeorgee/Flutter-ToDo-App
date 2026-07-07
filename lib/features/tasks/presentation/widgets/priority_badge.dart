@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:todo_app/config/theme/app_colors.dart';
 import 'package:todo_app/config/theme/app_spacing.dart';
 
-enum TaskPriority { high, medium, low, none }
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
 
 class PriorityBadge extends StatelessWidget {
   const PriorityBadge({

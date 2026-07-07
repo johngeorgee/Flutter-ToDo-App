@@ -1,49 +1,46 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:todo_app/config/theme/app_spacing.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
+import 'package:todo_app/features/categories/presentation/providers/category_providers.dart';
+import 'package:todo_app/features/tasks/domain/entities/task_entity.dart';
+import 'package:todo_app/features/tasks/presentation/providers/task_provider.dart';
+//import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/date_picker_field.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
-
-class TaskForm extends StatefulWidget {
+//import 'package:todo_app/features/tasks/presentation/providers/task_notifier.dart';
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
+class TaskForm extends ConsumerStatefulWidget {
   const TaskForm({
     super.key,
-    this.initialTitle = '',
-    this.initialDescription = '',
-    this.initialCategory = TaskCategory.personal,
-    this.initialPriority = TaskPriority.none,
-    this.initialDueDate,
-    this.onSave,
-    this.isEditing = false,
+    this.task ,
+    this.onSave
   });
 
-  final String initialTitle;
-  final String initialDescription;
-  final TaskCategory initialCategory;
-  final TaskPriority initialPriority;
-  final DateTime? initialDueDate;
+  final Task? task;
   final VoidCallback? onSave;
-  final bool isEditing;
 
   @override
-  State<TaskForm> createState() => _TaskFormState();
+  ConsumerState<TaskForm> createState() => _TaskFormState();
 }
 
-class _TaskFormState extends State<TaskForm> {
+class _TaskFormState extends ConsumerState<TaskForm> {
   late final TextEditingController _titleController;
   late final TextEditingController _descriptionController;
-  late TaskCategory _selectedCategory;
+  String?  _selectedCategoryId;
   late TaskPriority _selectedPriority;
   DateTime? _selectedDate;
 
   @override
   void initState() {
     super.initState();
-    _titleController = TextEditingController(text: widget.initialTitle);
+
+    _titleController = TextEditingController(text: widget.task?.title ?? '');
+
     _descriptionController =
-        TextEditingController(text: widget.initialDescription);
-    _selectedCategory = widget.initialCategory;
-    _selectedPriority = widget.initialPriority;
-    _selectedDate = widget.initialDueDate;
+        TextEditingController(text: widget.task?.description ?? '');
+    _selectedCategoryId = widget.task?.categoryId ?? '';
+    _selectedPriority = widget.task?.priority ?? TaskPriority.none;
+    _selectedDate = widget.task?.dueDate;
   }
 
   @override
@@ -52,12 +49,61 @@ class _TaskFormState extends State<TaskForm> {
     _descriptionController.dispose();
     super.dispose();
   }
+  Future<void> _saveTask() async {
+
+  if (_titleController.text.trim().isEmpty) {
+
+    
+    return;
+  }
+  
+  try {
+    if (widget.task == null) {
+
+  await ref.read(taskNotifierProvider.notifier).create(
+    title: _titleController.text.trim(),
+    description: _descriptionController.text.trim(),
+    categoryId: _selectedCategoryId,
+    priority: _selectedPriority,
+    dueDate: _selectedDate,
+  );
+
+} else {
+
+  await ref.read(taskNotifierProvider.notifier).update(
+    
+    id: widget.task!.id,
+    title: _titleController.text.trim(),
+    description: _descriptionController.text.trim(),
+    categoryId: _selectedCategoryId,
+    priority: _selectedPriority,
+    dueDate: _selectedDate,
+    isCompleted: widget.task!.isCompleted,
+    createdAt: widget.task!.createdAt,
+  );
+}
+
+    if (!mounted) return;
+
+    widget.onSave?.call();
+    Navigator.pop(context);
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString()),
+      ),
+    );
+  }
+}
 
   @override
   Widget build(BuildContext context) {
+ 
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-
+    final categories = ref.watch(categoriesStreamProvider);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(AppSpacing.lg),
       child: Column(
@@ -65,6 +111,7 @@ class _TaskFormState extends State<TaskForm> {
         children: [
           TextField(
             controller: _titleController,
+            
             style: textTheme.headlineSmall,
             decoration: const InputDecoration(
               hintText: 'Task title',
@@ -79,6 +126,9 @@ class _TaskFormState extends State<TaskForm> {
           const SizedBox(height: AppSpacing.lg),
           TextField(
             controller: _descriptionController,
+            onChanged: (value){
+
+            },
             maxLines: 4,
             minLines: 2,
             decoration: InputDecoration(
@@ -90,21 +140,34 @@ class _TaskFormState extends State<TaskForm> {
             textCapitalization: TextCapitalization.sentences,
           ),
           const SizedBox(height: AppSpacing.xl),
-          _SectionLabel(label: 'Category'),
+          const _SectionLabel(label: 'Category'),
           const SizedBox(height: AppSpacing.sm),
-          Wrap(
-            spacing: AppSpacing.sm,
-            runSpacing: AppSpacing.sm,
-            children: TaskCategory.values.map((category) {
-              return CategoryChip(
-                category: category,
-                selected: _selectedCategory == category,
-                onTap: () => setState(() => _selectedCategory = category),
+          categories.when(
+            data: (list){
+              return Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: list.map((category){
+                  return ChoiceChip(
+                    label: Text(category.name), 
+                    selected: _selectedCategoryId == category.id,
+                    avatar: CircleAvatar(
+                      radius: 8,
+                      backgroundColor: category.color,
+                    ),
+                    onSelected: (_){
+                      setState(() {
+                        _selectedCategoryId = category.id;
+                      });
+                    },
+                    );
+                }).toList(),
               );
-            }).toList(),
-          ),
+            }, 
+            error: (_, _) => const SizedBox(), 
+            loading: ()=> const CircularProgressIndicator()),
           const SizedBox(height: AppSpacing.xl),
-          _SectionLabel(label: 'Priority'),
+          const _SectionLabel(label: 'Priority'),
           const SizedBox(height: AppSpacing.sm),
           Wrap(
             spacing: AppSpacing.sm,
@@ -135,10 +198,12 @@ class _TaskFormState extends State<TaskForm> {
           ),
           const SizedBox(height: AppSpacing.xxxl),
           FilledButton(
-            onPressed: widget.onSave,
+            onPressed: (){
+
+              _saveTask();},
             child: Padding(
               padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-              child: Text(widget.isEditing ? 'Save Changes' : 'Create Task'),
+              child: Text(widget.task == null ? 'Create Task' : 'Save Changes'),
             ),
           ),
         ],

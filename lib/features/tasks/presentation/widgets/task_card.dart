@@ -3,7 +3,7 @@ import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
 import 'package:todo_app/shared/widgets/animated_checkbox.dart';
-
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
 class TaskCard extends StatelessWidget {
   const TaskCard({
     super.key,

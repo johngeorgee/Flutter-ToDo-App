@@ -4,10 +4,11 @@ import 'package:todo_app/config/theme/app_spacing.dart';
 import 'package:todo_app/core/widgets/app_scaffold.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/category_chip.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/empty_state.dart';
-import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
+//import 'package:todo_app/features/tasks/presentation/widgets/priority_badge.dart';
 import 'package:todo_app/features/tasks/presentation/widgets/task_tile.dart';
 import 'package:todo_app/shared/widgets/app_search_bar.dart';
 import 'package:todo_app/shared/widgets/section_header.dart';
+import 'package:todo_app/features/tasks/domain/entities/task_priority.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
